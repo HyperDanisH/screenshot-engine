@@ -28,6 +28,12 @@ const initializeBrowser = async () => {
   });
 };
 
+const shutdownBrowser = async () => {
+  if (browser) {
+    await browser.close();
+  }
+};
+
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World')
 })
@@ -35,5 +41,12 @@ app.get('/', (req: Request, res: Response) => {
 app.listen(port, () => {
   initializeBrowser().then(() => {
     console.log(`Server is running on port ${port}`);
+  });
+});
+
+process.on('SIGINT', () => {
+  shutdownBrowser().then(() => {
+    console.log('Browser closed');
+    process.exit(0);
   });
 });
