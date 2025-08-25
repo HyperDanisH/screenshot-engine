@@ -12,6 +12,22 @@ const app = express()
 
 let browser: Browser;
 
+const AD_SERVING_DOMAINS = [
+  'doubleclick.net',
+  'adservice.google.com',
+  'googlesyndication.com',
+  'googletagservices.com',
+  'googletagmanager.com',
+  'google-analytics.com',
+  'adsystem.com',
+  'adservice.com',
+  'adnxs.com',
+  'ads-twitter.com',
+  'facebook.net',
+  'fbcdn.net',
+  'amazon-adsystem.com'
+];
+
 const initializeBrowser = async () => {
   browser = await chromium.launch({
     headless: true,
@@ -27,6 +43,35 @@ const initializeBrowser = async () => {
     ]
   });
 };
+
+//TODO: Proxy, Block Media
+const createContext = async (skipTlsVerification: boolean = false) => {
+  const userAgent = new UserAgent().toString();
+  const viewport = { width: 1280, height: 800 };
+
+  const contextOptions: any = {
+    userAgent,
+    viewport,
+    ignoreHTTPSErrors: skipTlsVerification,
+  };
+
+  const newContext = await browser.newContext(contextOptions);
+
+  // Intercept all requests to avoid loading ads if there are any.
+  await newContext.route('**/*', (route: Route, request: PlaywrightRequest) => {
+    const requestUrl = new URL(request.url());
+    const hostname = requestUrl.hostname;
+
+    if (AD_SERVING_DOMAINS.some(domain => hostname.includes(domain))) {
+      console.log(hostname);
+      return route.abort();
+    }
+    return route.continue();
+  });
+  
+  return newContext;
+};
+
 
 const shutdownBrowser = async () => {
   if (browser) {
