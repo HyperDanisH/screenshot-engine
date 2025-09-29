@@ -57,14 +57,15 @@ const initializeBrowser = async () => {
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--single-process',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--disable-dev-shm-usage'
     ]
   });
 };
 
 //TODO: Proxy, Block Media
-const createContext = async (skipTlsVerification: boolean = false) => {
+const createContext = async (skipTlsVerification: boolean = false): Promise<BrowserContext> => {
   const userAgent = new UserAgent().toString();
   const viewport = { width: 1280, height: 800 };
 
@@ -91,7 +92,7 @@ const createContext = async (skipTlsVerification: boolean = false) => {
   return newContext;
 };
 
-const takeScreenshot = async (page: Page, url: string, waitUntil: 'load' | 'networkidle', waitAfterLoad: number, timeout: number, checkSelector: string | undefined) => {
+const takeScreenshot = async (page: Page, url: string, waitUntil: 'load' | 'networkidle', waitAfterLoad: number, timeout: number, checkSelector: string | undefined): Promise<Buffer> => {
   console.log(`Navigating to ${url} with waitUntil: ${waitUntil} and timeout: ${timeout}ms`);
   const response = await page.goto(url, { waitUntil, timeout });
 
@@ -107,8 +108,9 @@ const takeScreenshot = async (page: Page, url: string, waitUntil: 'load' | 'netw
     }
   }
 
-  await page.screenshot({ path: 'screenshot.png' });
+  const image = await page.screenshot();
   console.log("Success ✅")
+  return image;
 }
 
 
@@ -147,7 +149,7 @@ app.post('/screenshot', async (req: Request, res: Response) => {
     await initializeBrowser();
   }
 
-  const requestContext = await createContext(skip_tls_verification);
+  const requestContext: BrowserContext = await createContext(skip_tls_verification);
   const page = await requestContext.newPage();
 
   // Set headers if provided
@@ -155,7 +157,7 @@ app.post('/screenshot', async (req: Request, res: Response) => {
     await page.setExtraHTTPHeaders(headers);
   }
 
-  let result: any;
+  let result: Buffer;
 
   try {
     // Strategy 1: Normal
@@ -172,6 +174,13 @@ app.post('/screenshot', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'An error occurred while fetching the page.' });
     }
   }
+
+  await page.close();
+  await requestContext.close();
+
+  res.status(200).json({
+    data: result.toString("base64"),
+  })
 })
 
 app.listen(port, () => {
