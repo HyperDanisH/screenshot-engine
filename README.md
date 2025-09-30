@@ -1,2 +1,3 @@
 # screenshot-engine
+
 An Open Source docker based container that takes screenshots of any website url you put at it. It will click screenshots according to the dimensions specified and visualizes every thing in a Nextjs based web app running inside docker container itself.
