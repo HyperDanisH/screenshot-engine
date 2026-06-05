@@ -1,3 +1,8 @@
-# screenshot-engine
+# **📸 ScreenCrawl**
 
-An Open Source docker based container that takes screenshots of any website url you put at it. It will click screenshots according to the dimensions specified and visualizes every thing in a Nextjs based web app running inside docker container itself.
+**An Open Source API to capture, store, view, and ingest (to LLMs) images from web. Feed images to LLMs like never before.**
+
+## Why ScreenCrawl?
+
+- **Automated Screenshots**
+- **LLM-ready Screenshots**
